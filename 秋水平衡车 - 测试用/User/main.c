@@ -225,20 +225,25 @@ void TIM3_IRQHandler(void)
 		{
 			Count0 = 0;
 			
+			//MPU6050获得原始数据
+			MPU6050_GetData(&AX, &AY, &AZ, &GX, &GY, &GZ);
 			
-			MPU6050_GetData(&AX, &AY, &AZ, &GX, &GY, &GZ);//获取MPU6050数据
-
-			// 相关角度计算
-			if(GX < 30 && GX >-120){ GX = 0; }
+			if(GX < 30 && GX >-120){ GX = 0; }/*传感器本身存在零偏误差（陀螺仪静止时读数不为 0），		
+												这里是手动的零偏校准减少后续积分漂移。*/
 			
+			//弧度转角度
 			float ax_square = (float)AX * AX;    // AX的平方
 			float az_square = (float)AZ * AZ;    // AZ的平方
 			float sqrt_ax_az = sqrt(ax_square + az_square); 
 			AngleAcc = -atan2((float)AY, sqrt_ax_az) * 180.0f / 3.1415926535f;
+			
+			//角度偏移校准：补偿安装或重力的偏移
 			AngleAcc += 3;
 			
 			//互补滤波
-			AngleGyro = Angle + GX /32768.0 * 2000 * 0.01;
+			AngleGyro = Angle + GX /32768.0 * 2000 * 0.01;/*用陀螺仪积分计算角度:当前角度 + 角速度 * 时间;
+															Angle + 角速度 * 时间：陀螺仪积分（陀螺仪预测姿态）*/	
+			//简单互补滤波融合角度
 			float Alpha = 0.18;
 			Angle = Alpha * AngleAcc + (1 - Alpha) * AngleGyro;
 			if( Angle > 100 ||  Angle < -100 )
