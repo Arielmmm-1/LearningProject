@@ -1,0 +1,88 @@
+！！！！！这个工程是建立在我在B站买的平衡车程序代码！！！！！！！！
+		！！！！！会飞的鱿鱼03的小店！！！！！！
+我仅仅是做为FreeRTOS的移植学习，所以很多代码可能有遗漏和不足
+
+--------------freertos学习：
+https://www.bilibili.com/video/BV1Jw411i7Fz?spm_id_from=333.788.videopod.episodes&vd_source=1a7e1f3e114f171851fd820f1e7de84e&p=31
+
+
+---------freertos平衡车参考：
+开源地址：https://gitee.com/snqx-lqh/stm32-balance-car
+
+B站：https://www.bilibili.com/video/BV1cLNLe2EcG/?spm_id_from=333.1007.top_right_bar_window_custom_collection.content.click&vd_source=1a7e1f3e114f171851fd820f1e7de84e
+
+文件地址：D:\school\Software\learnProject\FreeROTS\stm32-balance-car-master\02_Firmware\HAL_WithOs
+它的FreeRTOS任务地址：D:\school\Software\learnProject\FreeROTS\stm32-balance-car-master\02_Firmware\HAL_WithOs\User\TASK
+
+
+---------安排：
+1 ：在平衡车上加Freertos
+文件地址：D:\school\Software\learnProject\FreeROTS\UpStanding_Car(370)
+
+目前：默认配置加上FreeRTOS，目前正常
+	
+
+计划：驱动程序不变
+	 学别人的创建模块化任务
+	 ！在创建的任务上重建在FreeRTOS下平衡车的逻辑(仿照原有)
+
+注意：原项目里没有TIM使用了，用的是外部中断，原来gpio.c里注释了，必须在初始化驱动模块后再开始该外部中断；
+	 核心控制函数在PID.c里，而中断回调函数在sr04.c里；----------现改用FreeRTOS的模拟定时
+
+	void USART3_IRQHandler(void)蓝牙中断在it里
+
+	
+
+
+问题：1：外部中断卡死
+
+
+资源分配：
+		目前三个Task，control_task(高),ui_task（低）,ble_task（中）
+
+1. Control 任务（核心任务）目前：							
+核心职责：
+定时读取传感器（编码器、MPU6050）数据
+执行直立环 / 速度环 / 转向环 PID 计算
+输出 PWM 控制电机，执行安全停机逻辑
+维护系统核心控制参数和共享数据
+用vTaskDelayUntil实现 10ms 固定周期执行（保证控制实时性）
+
+2. 蓝牙任务（中等优先级）目前：
+核心职责：
+接收蓝牙遥控指令（Fore/Back/Left/Right）
+解析指令并更新目标控制量（Target_Speed、Target_turn）
+
+3. UI 任务（低优先级）     目前：
+核心职责：
+驱动 OLED显示平衡车状态（姿态、速度、遥控指令）
+
+
+1：共享数据保护：Target_Speed、Target_turn 是蓝牙任务写、Control 任务读的跨任务共享变量，需用互斥量保护（防止读写冲突）
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+
